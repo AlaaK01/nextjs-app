@@ -1,15 +1,13 @@
-
 import style from "../../components/users/User.module.css";
 import { useRouter } from "next/router";
-import { useDispatch } from 'react-redux';
-import { addToCart } from "../../redux/cart.slice"; 
+import { useDispatch } from "react-redux";
 import Head from "next/head";
 import Image from "next/image";
-import axios from "axios";
+import { dbConnect } from "@/db/connect";
+import Users from "../../models/User";
+import mongoose from "mongoose";
 
-
-
-const User = ({ user}) => {
+const User = ({ user }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { userId } = router.query;
@@ -18,7 +16,6 @@ const User = ({ user}) => {
     router.push("/users");
   };
 
-  
   const handleGoToUpdate = () => {
     router.push(`/users/update-user/${userId}`);
   };
@@ -46,10 +43,11 @@ const User = ({ user}) => {
           <span>Password: {user.password}</span>
           <span>Email: {user.email}</span>
           <span>Phone: {user.phone}</span>
-          <span>{user.birthday !== null ? user.birthday.split('T')[0] : ''}</span>
+          <span>
+            {user.birthday !== null ? user.birthday.split("T")[0] : ""}
+          </span>
           <span>Gender: {user.gender}</span>
           <span>Role: {user.role}</span>
-          
         </div>
         <div className={style.updateAndDelete}>
           <div className={style.actions}>
@@ -59,14 +57,13 @@ const User = ({ user}) => {
             <button onClick={handleGoToDelete}>Delete User</button>
           </div>
         </div>
-       
+
         <div>
           <button onClick={handleBackUsers} className={style.goBack}>
             Back To Users
           </button>
         </div>
       </div>
-      
     </div>
   );
 };
@@ -74,35 +71,63 @@ const User = ({ user}) => {
 export default User;
 
 export const getStaticPaths = async () => {
-  
-  const res = await axios.get(
-    `${process.env.APP_DEV || process.env.API_PROD}/api/users`
-  );
-
-  const paths = res.data.map((path) => {
-    return {
-      params: { userId: `${path._id.toString()}` },
-    };
-  });
+  dbConnect();
+  const usersPath = await Users.find({}, { _id: 1 });
 
   return {
-    paths: paths,
-    fallback: false,
+    fallback: "blocking",
+    paths: usersPath.map((user) => ({
+      params: { userId: user._id.toString() },
+    })),
   };
 };
 
 export const getStaticProps = async (context) => {
-  
-  const res = await axios.get(
-    `${process.env.APP_DEV || process.env.API_PROD}/api/users/${
-      context.params.userId
-    }`
-  );
+  const userId = context.params.userId;
+
+  dbConnect();
+  const selectedUser = await Users.findById({
+    _id: new mongoose.Types.ObjectId(userId),
+  });
+
+  const userData = JSON.parse(JSON.stringify(selectedUser));
 
   return {
     props: {
-      user: res.data,
+      user: userData,
     },
   };
 };
 
+// export const getStaticPaths = async () => {
+
+//   const res = await axios.get(
+//     `${process.env.APP_DEV || process.env.API_PROD}/api/users`
+//   );
+
+//   const paths = res.data.map((path) => {
+//     return {
+//       params: { userId: `${path._id.toString()}` },
+//     };
+//   });
+
+//   return {
+//     paths: paths,
+//     fallback: false,
+//   };
+// };
+
+// export const getStaticProps = async (context) => {
+
+//   const res = await axios.get(
+//     `${process.env.APP_DEV || process.env.API_PROD}/api/users/${
+//       context.params.userId
+//     }`
+//   );
+
+//   return {
+//     props: {
+//       user: res.data,
+//     },
+//   };
+// };

@@ -3,8 +3,9 @@ import { useState } from "react";
 import style from "../../components/users/User.module.css";
 import UsersForm from "../../components/users/UsersForm";
 import SearchItems from "../../components/products/SearchItems";
-import axios from "axios";
 import Head from "next/head";
+import { dbConnect } from '@/db/connect';
+import User from '../../models/User'
 
 const Users = ({ users }) => {
   const [search, setSearch] = useState("");
@@ -45,22 +46,70 @@ const Users = ({ users }) => {
 
 export default Users;
 
+//First losning
+//Convert the selectedProduct object to JSON-friendly data by using the JSON.parse(JSON.stringify()) method
 export const getServerSideProps = async () => {
-  //Fetch Api
-  // const res = await fetch("http://localhost:3000/api/products");
-  // const data = await res.json();
-
-  //const res = await axios.get("http://localhost:3000/api/products");
-  const res = await axios.get(
-    `${process.env.APP_DEV || process.env.API_PROD}/api/users`
-  );
+ dbConnect();
+ const resUsers = await User.find();
+ const usersData = JSON.parse(JSON.stringify(resUsers));
 
   return {
     props: {
-      users: res.data
+      users: usersData,
     },
   };
 };
+
+
+
+// //Second losning
+// //using properties
+// export const getServerSideProps = async () => {
+//   dbConnect();
+//   const usersData = await User.find();
+
+//   return {
+//     props: {
+//       users: usersData.map((user) => ({
+//         _id: user._id.toString(),
+//         name: user.name,
+//         username: user.username,
+//         password: user.password,
+//         email: user.email,
+//         phone: user.phone,
+//         birthday: user.birthday ? user.birthday.toISOString() : null,
+//         role: user.role,
+//         gender: user.gender,
+//         image: user.image,
+//       })),
+//     },
+//   };
+// };
+
+
+
+
+
+
+
+
+
+// export const getServerSideProps = async () => {
+//   //Fetch Api
+//   // const res = await fetch("http://localhost:3000/api/products");
+//   // const data = await res.json();
+
+//   //const res = await axios.get("http://localhost:3000/api/products");
+//   const res = await axios.get(
+//     `${process.env.APP_DEV || process.env.API_PROD}/api/users`
+//   );
+
+//   return {
+//     props: {
+//       users: res.data
+//     },
+//   };
+// };
 
 // // export const getStaticProps = async () => {
 // //   const res = await fetch("http://localhost:3000/api/products");

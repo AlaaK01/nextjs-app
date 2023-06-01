@@ -3,8 +3,9 @@ import { useState } from "react";
 import style from "../../components/products/Product.module.css";
 import ProductsForm from "../../components/products/ProductsForm";
 import SearchItems from "../../components/products/SearchItems";
-import axios from "axios";
 import Head from "next/head";
+import { dbConnect } from "@/db/connect";
+import Product from "../../models/Product";
 
 const Products = ({ products }) => {
   const [search, setSearch] = useState("");
@@ -50,13 +51,17 @@ export const getServerSideProps = async () => {
   // const data = await res.json();
 
   //const res = await axios.get("http://localhost:3000/api/products");
-  const res = await axios.get(
-    `${process.env.APP_DEV || process.env.API_PROD}/api/products`
-  );
+
+  // const res = await axios.get(
+  //   `${process.env.APP_DEV || process.env.API_PROD}/api/products`
+  // );
+
+  dbConnect();
+  const productsData = await Product.find();
 
   return {
     props: {
-      products: res.data.map((product) => ({
+      products: productsData.map((product) => ({
         id: product._id.toString(),
         name: product.Name,
         description: product.Description,

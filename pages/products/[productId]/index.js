@@ -4,7 +4,9 @@ import { useDispatch } from "react-redux";
 import { addToCart } from "../../../redux/cart.slice";
 import Head from "next/head";
 import Image from "next/image";
-import axios from "axios";
+import { dbConnect } from "@/db/connect";
+import Products from "../../../models/Product";
+import mongoose from "mongoose";
 
 const Product = ({ product }) => {
   const dispatch = useDispatch();
@@ -78,43 +80,73 @@ const Product = ({ product }) => {
 export default Product;
 
 export const getStaticPaths = async () => {
-  //const res = await fetch("http://localhost:3000/api/products/");
-  //const data = await res.json();
-
-  const res = await axios.get(
-    `${process.env.APP_DEV || process.env.API_PROD}/api/products`
-  );
-
-  const paths = res.data.map((path) => {
-    return {
-      params: { productId: `${path._id.toString()}` },
-    };
-  });
+  dbConnect();
+  const productsPath = await Products.find({}, { _id: 1 });
 
   return {
-    paths: paths,
-    fallback: false,
+    fallback: "blocking",
+    paths: productsPath.map((product) => ({
+      params: { productId: product._id.toString() },
+    })),
   };
 };
 
 export const getStaticProps = async (context) => {
-  // const res = await fetch(
-  //   `http://localhost:3000/api/products/${context.params.productId}`
-  // );
-  // const data = await res.json();
+  const productId = context.params.productId;
 
-  const res = await axios.get(
-    `${process.env.APP_DEV || process.env.API_PROD}/api/products/${
-      context.params.productId
-    }`
-  );
+  dbConnect();
+  const selectedProduct = await Products.findById({
+    _id: new mongoose.Types.ObjectId(productId),
+  });
+
+  const productData = JSON.parse(JSON.stringify(selectedProduct));
 
   return {
     props: {
-      product: res.data,
+      product: productData,
     },
   };
 };
+
+
+// export const getStaticPaths = async () => {
+//   //const res = await fetch("http://localhost:3000/api/products/");
+//   //const data = await res.json();
+
+//   const res = await axios.get(
+//     `${process.env.APP_DEV || process.env.API_PROD}/api/products`
+//   );
+
+//   const paths = res.data.map((path) => {
+//     return {
+//       params: { productId: `${path._id.toString()}` },
+//     };
+//   });
+
+//   return {
+//     paths: paths,
+//     fallback: false,
+//   };
+// };
+
+// export const getStaticProps = async (context) => {
+//   // const res = await fetch(
+//   //   `http://localhost:3000/api/products/${context.params.productId}`
+//   // );
+//   // const data = await res.json();
+
+//   const res = await axios.get(
+//     `${process.env.APP_DEV || process.env.API_PROD}/api/products/${
+//       context.params.productId
+//     }`
+//   );
+
+//   return {
+//     props: {
+//       product: res.data,
+//     },
+//   };
+// };
 
 // export const getServerSideProps = async (context) => {
 //   const res = await fetch(
